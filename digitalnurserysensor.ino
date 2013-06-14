@@ -39,6 +39,7 @@ String serialCommand = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 unsigned long statetime,now;
 int nowState;
+int srate = 5;
 
 void setup()
 {
@@ -58,7 +59,7 @@ void loop()
   now = millis();
   parseCommand();
   switch(nowState) {
-  case 0:
+  case 0: //Wait HandShake
   {
     if ((now - statetime) >= 5000) {
       Serial.println(BOARDID);
@@ -67,17 +68,17 @@ void loop()
     }
   }
   break;
-  case 1:
+  case 1://Period Sensor Reading
   {
-    if ((now - statetime) >= 5000) {
-      readSensor();
-      //Serial.println("Read Sensor");
+    if ((now - statetime) >= (srate*1000)) {
+      //readSensor();
+      Serial.println("Read Sensor");
       statetime = now;
       nowState = 1;
     }
     break;
   }
-  case 2:
+  case 2://Send JSON to Serial Port
   {
     jsonOut();
     statetime = now;
@@ -113,11 +114,16 @@ void parseCommand()
 {
   if (stringComplete) {
     Serial.println(serialCommand); 
-    if (serialCommand.equals("<HOST>\n")){
+    String command=serialCommand.substring(0,4);
+    if (command.equals("HOST")){
       //Serial.println("Got it");
       nowState = 1;
     }
-    if (serialCommand.equals("<READ>\n")){
+    if (command.equals("READ")){
+      nowState = 2;
+    }
+    if (command.equals("RATE")){
+      srate = parseArgument(5);
       nowState = 2;
     }
     serialCommand = "";
@@ -125,7 +131,40 @@ void parseCommand()
   }
 }
 
+int parseArgument(int argOffset){
+  int ret = 0;
+  String arg = serialCommand.substring(argOffset, argOffset + 4);
+  //Serial.println(arg);
+  if(isNumeric(arg.charAt(3))){
+    ret = arg.charAt(3) - 48;
+    if(isNumeric(arg.charAt(2))){
+      ret = ret + (10 * (arg.charAt(2) - 48));
+      if(isNumeric(arg.charAt(1))){
+        ret = ret + (100 * (arg.charAt(1) - 48));
+        if(arg.charAt(0) == '-'){
+          ret = -ret;
+        } else {
+          if(isNumeric(arg.charAt(0))){
+            ret = ret + (1000 * (arg.charAt(0) - 48));
+          }
+        }
+      }
+    }
+  }
+  return ret;
+}
 
+boolean isNumeric(char character){
+  boolean ret = false;
+  if(character >= 48 && character <= 75){
+    ret = true;
+  }
+  return true;
+}
+
+String getArgument(int argOffset){
+  return serialCommand.substring(argOffset, argOffset + 4);
+}
 //Json Related
 void showIndent(int indent)
 {
