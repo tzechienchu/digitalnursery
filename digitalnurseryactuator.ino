@@ -6,8 +6,20 @@ unsigned long statetime,now;
 int nowState;
 int OP1,OP2,OP3,OP4;
 
+// motor A
+int dir1PinA = 13;
+int dir2PinA = 12;
+int speedPinA = 10;
+
+// motor B
+// motor A
+int dir1PinB = 11;
+int dir2PinB = 8;
+int speedPinB = 9;
+
 void setup()
 {
+   motorInit();
    Serial.begin(115200); // Open serial connection to report values to host
    Serial.println(BOARDID);
    serialCommand.reserve(64);
@@ -34,6 +46,7 @@ void loop()
   {
       //readSensor();
       Serial.println("Set LED");
+      showLED(OP1);
       Serial.println(OP1);
       Serial.println(OP2);
       Serial.println(OP3);
@@ -46,15 +59,19 @@ void loop()
       if (OP1 == 1) {
         if (OP2 == 1) {
           Serial.println("Turn On Pump 1");
+          pumpOn(1);
         } else {
           Serial.println("Turn Off Pump 1");
+          pumpOff(1);
         }
       }
       if (OP1 == 2) {
         if (OP2 == 1) {
           Serial.println("Turn On Pump 2");
+          pumpOn(2);
         } else {
           Serial.println("Turn Off Pump 2");
+          pumpOff(2);
         }
       }
       statetime = now;
@@ -155,4 +172,70 @@ boolean isNumeric(char character){
 
 String getArgument(int argOffset){
   return serialCommand.substring(argOffset, argOffset + 4);
+}
+
+void motorInit()
+{
+    pinMode(dir1PinA, OUTPUT);
+    pinMode(dir2PinA, OUTPUT);
+    pinMode(speedPinA, OUTPUT);
+    pinMode(dir1PinB, OUTPUT);
+    pinMode(dir2PinB, OUTPUT);
+    pinMode(speedPinB, OUTPUT);
+    
+  //No Reverse
+    digitalWrite(dir1PinA, LOW);
+    digitalWrite(dir2PinA, HIGH);
+    
+    digitalWrite(dir1PinB, LOW);
+    digitalWrite(dir2PinB, HIGH);  
+    
+    analogWrite(speedPinA, 0);
+    analogWrite(speedPinB, 0);
+}
+
+void pumpOff(int id)
+{
+  digitalWrite(dir1PinA, LOW);
+  digitalWrite(dir2PinA, HIGH);
+    
+  digitalWrite(dir1PinB, LOW);
+  digitalWrite(dir2PinB, HIGH);  
+    
+  if (id == 1) {
+    analogWrite(speedPinA, 0);
+  }
+  if (id == 2) {
+    analogWrite(speedPinB, 0);
+  }  
+}
+
+void pumpOn(int id)
+{
+  digitalWrite(dir1PinA, LOW);
+  digitalWrite(dir2PinA, HIGH);
+    
+  digitalWrite(dir1PinB, LOW);
+  digitalWrite(dir2PinB, HIGH);  
+    
+  if (id == 1) {
+    analogWrite(speedPinA, 128);
+  }
+  if (id == 2) {
+    analogWrite(speedPinB, 128);
+  }  
+}
+
+//Use Motor Shield
+void showLED(int brt)
+{
+  brt = max(brt,0);
+  brt = min(brt,255);
+  digitalWrite(dir1PinA, LOW);
+  digitalWrite(dir2PinA, HIGH);
+    
+  digitalWrite(dir1PinB, LOW);
+  digitalWrite(dir2PinB, HIGH);  
+  
+  analogWrite(speedPinB, brt);
 }
