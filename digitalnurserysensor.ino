@@ -34,26 +34,99 @@ Barometer myBarometer;
 DHT dht(DHTPIN, DHTTYPE);
 SHT1x sht1x(dataPin, clockPin);
 
+#define BOARDID  "Sensory 1"
+String serialCommand = "";         // a string to hold incoming data
+boolean stringComplete = false;  // whether the string is complete
+unsigned long statetime,now;
+int nowState;
 
 void setup()
 {
    Wire.begin(); 
    Serial.begin(115200); // Open serial connection to report values to host
-   Serial.println("Starting up");
-   
-   myBarometer.init();
-   TSL2561.init(); 
+   Serial.println(BOARDID);
+   serialCommand.reserve(64);
+   statetime = millis();
+   nowState = 0;
+   //myBarometer.init();
+   //TSL2561.init(); 
    
 }
 
 void loop()
 {
+  now = millis();
+  parseCommand();
+  switch(nowState) {
+  case 0:
+  {
+    if ((now - statetime) >= 5000) {
+      Serial.println(BOARDID);
+      statetime = now;
+      nowState = 0;
+    }
+  }
+  break;
+  case 1:
+  {
+    if ((now - statetime) >= 5000) {
+      readSensor();
+      //Serial.println("Read Sensor");
+      statetime = now;
+      nowState = 1;
+    }
+    break;
+  }
+  case 2:
+  {
+    jsonOut();
+    statetime = now;
+    nowState = 1;
+    break;
+  }
 
-  readSensor()
-  jsonOut();
-  
-  delay(2000);
+  }
 }
+//Serial Command
+/*
+  SerialEvent occurs whenever a new data comes in the
+ hardware serial RX.  This routine is run between each
+ time loop() runs, so using delay inside loop can delay
+ response.  Multiple bytes of data may be available.
+ */
+void serialEvent() 
+{
+  while (Serial.available()) {
+    // get the new byte:
+    char inChar = (char)Serial.read(); 
+    // add it to the inputString:
+    serialCommand += inChar;
+    // if the incoming character is a newline, set a flag
+    // so the main loop can do something about it:
+    if (inChar == '\n') {
+      stringComplete = true;
+    } 
+  }
+}
+
+void parseCommand() 
+{
+  if (stringComplete) {
+    Serial.println(serialCommand); 
+    if (serialCommand.equals("<HOST>\n")){
+      //Serial.println("Got it");
+      nowState = 1;
+    }
+    if (serialCommand.equals("<READ>\n")){
+      nowState = 2;
+    }
+    serialCommand = "";
+    stringComplete = false;    
+  }
+}
+
+
+//Json Related
 void showIndent(int indent)
 {
   for(int i=0;i<indent*TABSIZE;i++) Serial.print(" ");
@@ -86,7 +159,7 @@ void jsonKVOut(int indent,char *key,float value,int final)
 }
 void jsonOut()
 {
-  Serial.print("{");QUOTE;Serial.print("DNSensor");QUOTE;Serial.println(": {");
+  Serial.print("{");QUOTE;Serial.print(BOARDID);QUOTE;Serial.println(": {");
     jsonSectionOut(1,"Soil");
       jsonKVOut(2,"Temperature",Stemp_c,0);
       jsonKVOut(2,"Humidity",Shumidity,1);
@@ -105,6 +178,7 @@ void jsonOut()
     jsonSectionEndOut(1,1);    
   Serial.println("}}");
 }
+
 void readSensor()
 {
   // Read values from the sensor
@@ -124,6 +198,7 @@ void readSensor()
   TSL2561.getLux();
   Lux=TSL2561.calculateLux(0,0,1);
 }
+
 void debugOut()
 {
   // Print the values to the serial port
