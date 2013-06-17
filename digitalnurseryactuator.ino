@@ -40,7 +40,7 @@ void setup()
    LEDB1 = 0;
    LEDB2 = 0;
    LEDB3 = 0;
-   
+   showLEDAll();
 }
 
 void loop()
@@ -60,11 +60,23 @@ void loop()
   case 1://Set LED
   {
       //readSensor();
-      Serial.println("Set LED");
-      showLED(OP1);
-      Serial.println(OP1);
-      Serial.println(OP2);
-      Serial.println(OP3);
+      Serial.println("Set LEDA");
+      showLEDAll();
+      Serial.println(LEDA1);
+      Serial.println(LEDA2);
+      Serial.println(LEDA3);
+      statetime = now;
+      nowState = 9;
+      break;
+  }
+  case 2://Set LEDB
+  {
+      //readSensor();
+      Serial.println("Set LEDB");
+      showLEDAll();
+      Serial.println(LEDB1);
+      Serial.println(LEDB2);
+      Serial.println(LEDB3);
       statetime = now;
       nowState = 9;
       break;
@@ -240,11 +252,17 @@ void pumpOn(int id)
     analogWrite(speedPinB, 128);
   }  
 }
-
+void LEDOffAll()
+{
+  Driver.begin(); // begin
+  Driver.SetColor(0, 0, 0); //R,G,B
+  Driver.SetColor(0, 0, 0); 
+  Driver.end();  
+}
 void showLEDAll()
 {
   Driver.begin(); // begin
-  Driver.SetColor(LEDA1, LEDA2, LEDA3); 
+  Driver.SetColor(LEDA1, LEDA2, LEDA3); //R,G,B
   Driver.SetColor(LEDB1, LEDB2, LEDB3); 
   Driver.end();  
 }
