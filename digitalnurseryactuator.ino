@@ -1,5 +1,6 @@
 #include <WString.h>
 #define BOARDID  "Actuator 1"
+
 String serialCommand = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 unsigned long statetime,now;
@@ -17,6 +18,14 @@ int dir1PinB = 11;
 int dir2PinB = 8;
 int speedPinB = 9;
 
+//LED Driver Controller Pin
+#include "RGBdriver.h"
+#define CLK 2//pins definitions for the driver        
+#define DIO 3
+RGBdriver Driver(CLK,DIO);
+int LEDA1,LEDA2,LEDA3;
+int LEDB1,LEDB2,LEDB3;
+
 void setup()
 {
    motorInit();
@@ -25,6 +34,12 @@ void setup()
    serialCommand.reserve(64);
    statetime = millis();
    nowState = 0;
+   LEDA1 = 0;
+   LEDA2 = 0;
+   LEDA3 = 0;
+   LEDB1 = 0;
+   LEDB2 = 0;
+   LEDB3 = 0;
    
 }
 
@@ -117,16 +132,16 @@ void parseCommand()
     if (command.equals("LEDA")) {
       //Serial.println("Set LED A");
       nowState = 1;
-      OP1 = parseArgument(5);
-      OP2 = parseArgument(10);
-      OP3 = parseArgument(15);
+      LEDA1 = parseArgument(5);
+      LEDA2 = parseArgument(10);
+      LEDA3 = parseArgument(15);
     }
     if (command.equals("LEDB")) {
       Serial.println("Set LED B");
       nowState = 2;
-      OP1 = parseArgument(5);
-      OP2 = parseArgument(10);
-      OP3 = parseArgument(15);
+      LEDB1 = parseArgument(5);
+      LEDB2 = parseArgument(10);
+      LEDB3 = parseArgument(15);
     }    
     if (command.equals("PUMP")) {
       Serial.println("Set Pump");
@@ -226,6 +241,13 @@ void pumpOn(int id)
   }  
 }
 
+void showLEDAll()
+{
+  Driver.begin(); // begin
+  Driver.SetColor(LEDA1, LEDA2, LEDA3); 
+  Driver.SetColor(LEDB1, LEDB2, LEDB3); 
+  Driver.end();  
+}
 //Use Motor Shield
 void showLED(int brt)
 {
